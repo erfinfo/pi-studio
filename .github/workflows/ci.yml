@@ -16,6 +16,16 @@ jobs:
           node-version: 20
           cache: npm
 
+      - name: Validate Bash installer
+        run: |
+          bash -n scripts/install.sh
+          shellcheck scripts/install.sh
+          scripts/install.sh --help >/dev/null
+
+      - name: Validate PowerShell installer
+        shell: pwsh
+        run: ./scripts/install.ps1 --help | Out-Null
+
       - name: Install backend deps
         run: npm ci --ignore-scripts || npm install --ignore-scripts
 

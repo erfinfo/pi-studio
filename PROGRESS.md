@@ -36,4 +36,15 @@
 
 ### Notes
 - Si le web répond en premier, le dialog TUI reste affiché → Échap pour l'ignorer (limitation connue)
-- pi-ask-tool est upstream devkade — le fork local évite l'écrasement par `pi update`; envisager un fork GitHub public
+- pi-ask-tool est publié sous `erfinfo/pi-ask-tool` et installé depuis GitHub
+
+## 2026-07-24 — Installation et documentation visuelle
+
+### Fait
+- Installateur Bash `scripts/install.sh` (Linux/macOS) : `-h/--help`, `--ref`, `--no-ask`, `--launch`, `--port`, `--lan`
+- Installateur PowerShell `scripts/install.ps1` (Windows) avec les mêmes options
+- Test réel `--launch --no-ask --port 14177` : Pi démarre et `/webui` fournit une URL tokenisée
+- 6 captures réelles dans `docs/screenshots/`, projet de démonstration isolé sous `/tmp`
+- README fr/en : installation sécurisée, options, captures dark/light, modèle, Ask, Artifacts
+- CI : validation Bash (bash -n + ShellCheck + aide) et PowerShell (aide via pwsh)
+- Validations : 19/19 tests, typecheck, build web, liens screenshots, scan secrets

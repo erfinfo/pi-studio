@@ -4,6 +4,8 @@ Une interface web pour [Pi](https://pi.dev) (le harness d'agent minimal), distri
 
 > 🇬🇧 [English version](README.md)
 
+![Chat pi-studio en mode dark](docs/screenshots/02-chat-complete-dark.png)
+
 ## Fonctionnalités
 
 - **Chat complet** avec streaming (`text_delta`, blocs de réflexion repliables, cartes d'appels d'outils)
@@ -18,11 +20,50 @@ Une interface web pour [Pi](https://pi.dev) (le harness d'agent minimal), distri
 
 ## Installation
 
+Prérequis : Pi, Git et Node.js 20+.
+
+### Linux / macOS (recommandé)
+
+Téléchargez et inspectez l'installateur avant de l'exécuter :
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/erfinfo/pi-studio/main/scripts/install.sh -o install-pi-studio.sh
+less install-pi-studio.sh
+chmod +x install-pi-studio.sh
+./install-pi-studio.sh
+```
+
+### Windows PowerShell
+
+```powershell
+Invoke-WebRequest https://raw.githubusercontent.com/erfinfo/pi-studio/main/scripts/install.ps1 -OutFile install-pi-studio.ps1
+Get-Content .\install-pi-studio.ps1
+powershell -ExecutionPolicy Bypass -File .\install-pi-studio.ps1
+```
+
+Options disponibles :
+
+| Option | Description |
+|---|---|
+| `-h`, `--help` | Affiche l'aide intégrée |
+| `--ref REF` | Installe une branche, un tag ou un commit (`main` par défaut) |
+| `--no-ask` | N'installe pas l'extension Ask web-aware |
+| `--launch` | Lance Pi et `/webui` après l'installation |
+| `--port PORT` | Choisit le port du serveur web (4173 par défaut) |
+| `--lan` | Bind sur `0.0.0.0` — lire l'avertissement de sécurité plus bas |
+
+Exemple :
+
+```bash
+./install-pi-studio.sh --launch --port 8080
+```
+
+### Installation manuelle
+
 ```bash
 # Optionnel, mais requis pour les dialogs Ask dans le navigateur
 pi install git:github.com/erfinfo/pi-ask-tool@main
 
-# pi-studio
 pi install git:github.com/erfinfo/pi-studio@main
 ```
 
@@ -39,6 +80,20 @@ Dans pi :
 ```
 
 **Questions interactives (outil ask)** : avec le fork web-aware [erfinfo/pi-ask-tool](https://github.com/erfinfo/pi-ask-tool), les questions `ask` s'affichent directement dans l'interface web (la question est publiée sur le bus d'événements partagé de pi ; le TUI et le web répondent en compétition — le premier gagne). Les dialogs des autres extensions (permissions, etc.) restent dans le TUI.
+
+## Captures d'écran
+
+| Agent au travail (dark) | Recherche de modèle |
+|---|---|
+| ![Agent en streaming, thème dark](docs/screenshots/01-chat-streaming-dark.png) | ![Menu de recherche des modèles](docs/screenshots/03-model-search.png) |
+
+| Dialog Ask | Aperçu d'un Artifact |
+|---|---|
+| ![Dialog Ask dans le navigateur](docs/screenshots/04-ask-dialog.png) | ![Aperçu Markdown rendu](docs/screenshots/05-artifacts-preview.png) |
+
+![Thème light](docs/screenshots/06-light-theme.png)
+
+Toutes les captures proviennent d'un projet de démonstration isolé et ne contiennent aucune donnée de session privée.
 
 ## Modèle de sécurité
 

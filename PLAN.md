@@ -12,6 +12,7 @@ Interface web pour Pi, distribuée comme package pi public (GitHub, MIT).
 - [x] Phase 6 : Panneau Artifacts (fichiers touchés, preview MD, diffs, images)
 - [x] Phase 7 : Thèmes dark/light (palette pi.dev), logo, i18n fr
 - [x] Phase 8 : Durcissement, README fr/en, CI, tests vitest, hygiene
+- [x] Post-v1 : installateurs Bash/PowerShell documentés + galerie de captures anonymisées
 
 ## Reste à faire (v2+)
 
