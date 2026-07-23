@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <title>pi-studio — spike</title>
+    <style>
+      body { background: #161d27; color: #d5d8db; font-family: monospace; padding: 2rem; }
+      #log { white-space: pre-wrap; }
+      .ok { color: #6a9fcc; }
+    </style>
+  </head>
+  <body>
+    <h1>pi-studio — spike</h1>
+    <div id="log">connexion…</div>
+    <script>
+      const token = new URLSearchParams(location.search).get("token") ?? "";
+      const ws = new WebSocket(`ws://${location.host}/ws?token=${token}`);
+      const log = (m, cls) => {
+        const d = document.createElement("div");
+        if (cls) d.className = cls;
+        d.textContent = m;
+        document.getElementById("log").appendChild(d);
+      };
+      ws.onopen = () => log("WS connecté", "ok");
+      ws.onmessage = (e) => log("<< " + e.data);
+      ws.onerror = () => log("WS erreur");
+      ws.onclose = () => log("WS fermé");
+    </script>
+  </body>
+</html>

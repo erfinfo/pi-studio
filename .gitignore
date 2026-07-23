@@ -1,0 +1,6 @@
+node_modules/
+*.log
+tmp_*
+proof_*
+demo_*
+# web/dist est commité volontairement (install git = npm install --omit=dev)
