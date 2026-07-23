@@ -39,9 +39,9 @@ interface CommandCtx {
   modelRegistry: ModelRegistry;
   sessionManager: SessionManagerLike;
   getContextUsage(): { tokens: number | null; contextWindow: number; percent: number | null } | undefined;
-  newSession(): Promise<{ cancelled: boolean }>;
-  switchSession(path: string): Promise<unknown>;
-  fork(entryId: string): Promise<{ cancelled: boolean }>;
+  newSession(options?: { withSession?: (ctx: unknown) => Promise<void> }): Promise<{ cancelled: boolean }>;
+  switchSession(path: string, options?: { withSession?: (ctx: unknown) => Promise<void> }): Promise<unknown>;
+  fork(entryId: string, options?: { withSession?: (ctx: unknown) => Promise<void> }): Promise<{ cancelled: boolean }>;
 }
 
 const SESSION_OP_TIMEOUT_MS = 60_000;
@@ -184,23 +184,34 @@ export async function listSessions(): Promise<SessionListItem[]> {
   }));
 }
 
+/**
+ * Après un remplacement de session, le ctx capturé devient stale (erreur
+ * explicite de pi). Le callback withSession reçoit le ctx frais : on le
+ * re-stashe immédiatement pour les opérations suivantes.
+ */
+async function restash(newCtx: unknown): Promise<void> {
+  hub.ctx = newCtx;
+  const cwd = (newCtx as { cwd?: string }).cwd;
+  if (cwd) hub.cwd = cwd;
+}
+
 export async function newSession(): Promise<void> {
   const c = ctx();
   if (!c.isIdle()) throw new Error("agent occupé");
-  await withTimeout(c.newSession());
+  await withTimeout(c.newSession({ withSession: restash }));
 }
 
 export async function resumeSession(path: string): Promise<void> {
   const c = ctx();
   if (!c.isIdle()) throw new Error("agent occupé");
   if (!existsSync(path)) throw new Error(`session introuvable: ${path}`);
-  await withTimeout(c.switchSession(path));
+  await withTimeout(c.switchSession(path, { withSession: restash }));
 }
 
 export async function forkSession(entryId: string): Promise<void> {
   const c = ctx();
   if (!c.isIdle()) throw new Error("agent occupé");
-  await withTimeout(c.fork(entryId));
+  await withTimeout(c.fork(entryId, { withSession: restash }));
 }
 
 // ---------------------------------------------------------------------------
@@ -354,8 +365,10 @@ export function expandCommand(text: string): { text: string; kind: "skill" | "te
 const IMAGE_EXTS = new Set([".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".bmp"]);
 
 export function readArtifactFile(path: string): { content?: string; base64?: string; mime?: string; error?: string } {
+  // Lecture seule, déjà protégée par le token. Le token donne de toute façon
+  // accès à l'agent (qui a accès complet au FS) : restreindre au cwd serait
+  // du théâtre de sécurité. On se limite donc à vérifier que c'est un fichier.
   const abs = resolve(hub.cwd, path);
-  if (!abs.startsWith(resolve(hub.cwd))) return { error: "chemin hors du répertoire de travail" };
   if (!existsSync(abs) || !statSync(abs).isFile()) return { error: "fichier introuvable" };
   const ext = `.${basename(abs).split(".").pop()?.toLowerCase() ?? ""}`;
   if (IMAGE_EXTS.has(ext)) {
