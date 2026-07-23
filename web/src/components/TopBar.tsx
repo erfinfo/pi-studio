@@ -1,8 +1,27 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { t } from "../i18n";
 import { store, type StudioState } from "../ws";
 
 const THINKING_LEVELS = ["off", "minimal", "low", "medium", "high", "xhigh", "max"];
+
+function providerLabel(provider?: string): string {
+  const value = (provider ?? "").toLowerCase();
+  if (value.includes("openrouter")) return "OpenRouter";
+  if (value.includes("codex") || value === "openai") return "Codex";
+  if (value.includes("kimi") || value.includes("moonshot")) return "Kimi";
+  if (value.includes("deepseek")) return "DeepSeek";
+  if (value.includes("sub")) return "Sub";
+  return provider || "Modèle";
+}
+
+function modelName(id?: string, name?: string): string {
+  const value = name?.trim() || id?.split("/").pop() || "?";
+  return value.replace(/^[^:]+:\s*/, "");
+}
+
+function modelDisplay(provider?: string, id?: string, name?: string): string {
+  return `${modelName(id, name)} · ${providerLabel(provider)}`;
+}
 
 interface Props {
   state: StudioState;
@@ -15,12 +34,29 @@ export default function TopBar({ state, onToggleSessions, onToggleArtifacts, onT
   const [theme, setTheme] = useState(document.documentElement.dataset.theme === "light" ? "light" : "dark");
   const [modelPicker, setModelPicker] = useState(false);
   const [modelQuery, setModelQuery] = useState("");
+  const modelControlRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (modelPicker) {
       store.send({ type: "list_models" });
       setModelQuery("");
     }
+  }, [modelPicker]);
+
+  useEffect(() => {
+    if (!modelPicker) return;
+    const closeOnOutsidePointer = (event: PointerEvent) => {
+      if (!modelControlRef.current?.contains(event.target as Node)) setModelPicker(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setModelPicker(false);
+    };
+    document.addEventListener("pointerdown", closeOnOutsidePointer);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsidePointer);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
   }, [modelPicker]);
 
   const q = modelQuery.toLowerCase();
@@ -35,7 +71,7 @@ export default function TopBar({ state, onToggleSessions, onToggleArtifacts, onT
     localStorage.setItem("pi-studio.theme", next);
   };
 
-  const modelLabel = state.model ? `${state.model.provider ?? ""}/${state.model.id ?? state.model.name ?? "?"}` : "—";
+  const modelLabel = state.model ? modelDisplay(state.model.provider, state.model.id, state.model.name) : "—";
   const ctxPct = state.contextUsage?.percent;
 
   return (
@@ -63,7 +99,7 @@ export default function TopBar({ state, onToggleSessions, onToggleArtifacts, onT
               <span>{ctxPct.toFixed(0)}%</span> ctx
             </span>
           )}
-          <div className="model-control">
+          <div className="model-control" ref={modelControlRef}>
             <button className="toolbar-button model-button mono" onClick={() => setModelPicker((v) => !v)} title={t("model.picker")}>
               <span className="model-label">{modelLabel}</span>
               <span className="chevron">⌄</span>
@@ -89,10 +125,8 @@ export default function TopBar({ state, onToggleSessions, onToggleArtifacts, onT
                       setModelPicker(false);
                     }}
                   >
-                    <span className="name">
-                      {m.provider}/{m.id}
-                    </span>
-                    <span className="desc">{m.name ?? ""}</span>
+                    <span className="name">{modelDisplay(m.provider, m.id, m.name)}</span>
+                    <span className="desc">{m.provider}/{m.id}</span>
                   </div>
                 ))}
               </div>
