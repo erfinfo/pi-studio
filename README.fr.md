@@ -19,7 +19,11 @@ Une interface web pour [Pi](https://pi.dev) (le harness d'agent minimal), distri
 ## Installation
 
 ```bash
-pi install git:github.com/erick-fortin/pi-studio
+# Optionnel, mais requis pour les dialogs Ask dans le navigateur
+pi install git:github.com/erfinfo/pi-ask-tool@main
+
+# pi-studio
+pi install git:github.com/erfinfo/pi-studio@main
 ```
 
 ## Utilisation
@@ -34,7 +38,7 @@ Dans pi :
 /studio               # alias
 ```
 
-**Questions interactives (outil ask)** : avec le fork web-aware de [pi-ask-tool](https://github.com/devkade/pi-ask-tool), les questions `ask` s'affichent directement dans l'interface web (la question est publiée sur le bus d'événements partagé de pi ; le TUI et le web répondent en compétition — le premier gagne). Les dialogs des autres extensions (permissions, etc.) restent dans le TUI.
+**Questions interactives (outil ask)** : avec le fork web-aware [erfinfo/pi-ask-tool](https://github.com/erfinfo/pi-ask-tool), les questions `ask` s'affichent directement dans l'interface web (la question est publiée sur le bus d'événements partagé de pi ; le TUI et le web répondent en compétition — le premier gagne). Les dialogs des autres extensions (permissions, etc.) restent dans le TUI.
 
 ## Modèle de sécurité
 
@@ -49,7 +53,7 @@ Testé avec pi **0.81.1** (API pré-1.0). Node ≥ 20.
 ## Développement
 
 ```bash
-git clone https://github.com/erick-fortin/pi-studio
+git clone https://github.com/erfinfo/pi-studio
 cd pi-studio
 npm install
 cd web && npm install && npm run build   # construit web/dist (commité)

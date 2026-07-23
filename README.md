@@ -21,7 +21,11 @@ A web interface for [Pi](https://pi.dev) (the minimal coding agent harness), dis
 ## Install
 
 ```bash
-pi install git:github.com/erick-fortin/pi-studio
+# Optional but required for Ask dialogs in the browser
+pi install git:github.com/erfinfo/pi-ask-tool@main
+
+# pi-studio
+pi install git:github.com/erfinfo/pi-studio@main
 ```
 
 ## Usage
@@ -36,7 +40,7 @@ Inside pi:
 /studio               # alias
 ```
 
-**Interactive questions (ask tool)**: with the web-aware fork of [pi-ask-tool](https://github.com/devkade/pi-ask-tool), `ask` questions appear directly in the web UI (the question is published on pi's shared event bus; TUI and web race to answer — first wins). Other extensions' dialogs (permission prompts, etc.) still appear in the TUI.
+**Interactive questions (ask tool)**: with the web-aware fork [erfinfo/pi-ask-tool](https://github.com/erfinfo/pi-ask-tool), `ask` questions appear directly in the web UI (the question is published on pi's shared event bus; TUI and web race to answer — first wins). Other extensions' dialogs (permission prompts, etc.) still appear in the TUI.
 
 ## Security model
 
@@ -51,7 +55,7 @@ Tested with pi **0.81.1** (API is pre-1.0). Node ≥ 20.
 ## Development
 
 ```bash
-git clone https://github.com/erick-fortin/pi-studio
+git clone https://github.com/erfinfo/pi-studio
 cd pi-studio
 npm install
 cd web && npm install && npm run build   # builds web/dist (committed)

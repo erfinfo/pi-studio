@@ -2,6 +2,14 @@
   "name": "pi-studio",
   "version": "0.1.0",
   "description": "Interface web pour Pi — web UI extension for the Pi coding agent",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/erfinfo/pi-studio.git"
+  },
+  "homepage": "https://github.com/erfinfo/pi-studio#readme",
+  "bugs": {
+    "url": "https://github.com/erfinfo/pi-studio/issues"
+  },
   "keywords": ["pi-package"],
   "license": "MIT",
   "type": "module",
