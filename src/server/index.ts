@@ -58,7 +58,12 @@ function generateToken(): string {
 
 function tokenFrom(req: IncomingMessage): string {
   const url = new URL(req.url ?? "/", "http://localhost");
-  return url.searchParams.get("token") ?? "";
+  const queryToken = url.searchParams.get("token");
+  if (queryToken) return queryToken;
+  // Fallback cookie : les assets (JS/CSS) sont demandés sans query string.
+  const cookie = req.headers.cookie ?? "";
+  const match = cookie.match(/(?:^|;\s*)pi_studio_token=([^;]+)/);
+  return match?.[1] ?? "";
 }
 
 function originAllowed(req: IncomingMessage, port: number, lan: boolean): boolean {
@@ -101,6 +106,8 @@ function handleHttp(req: IncomingMessage, res: ServerResponse, token: string): v
   }
 
   if (url.pathname === "/") {
+    // Poser le token en cookie pour les requêtes d'assets qui suivent.
+    res.setHeader("set-cookie", `pi_studio_token=${token}; Path=/; HttpOnly; SameSite=Strict`);
     if (serveStatic(res, "index.html")) return;
   } else if (serveStatic(res, decodeURIComponent(url.pathname))) {
     return;

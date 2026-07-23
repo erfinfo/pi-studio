@@ -4,16 +4,25 @@
 
 ### Fait
 - Requirements + Planning validés via skill plan-simple-k3 (critique K3 intégrée)
-- Recherche API : docs pi v0.81.1 (sdk, extensions, packages, rpc) + source dist
-- Découverte : `sendUserMessage` n'expanse pas les commandes → le bridge gère l'expansion skill/templates
-- Découverte : commandes d'extensions tierces non invoquables depuis une extension → limitation v1
-- Palette + logo pi.dev récupérés (MIT)
+- **Toutes les phases Build (1-8) terminées et validées par tests E2E réels**
+- Validations E2E (pi réel en tmux + clients WS) :
+  - serveur démarré par `/webui` dans le processus pi, token + Origin OK
+  - prompt → streaming text_delta/thinking_delta, message_end, agent_end
+  - 258 modèles listés, set_thinking appliqué, 170 commandes énumérées
+  - 39 sessions listées, resume (6 messages restaurés), fork, new_session
+  - artifacts : write tracké, read_file OK, diff disponible
+  - 19 tests vitest (fidélité substituteArgs/parseCommandArgs, sécurité Origin/traversal)
+- Bugs trouvés et corrigés :
+  - ctx stale après remplacement de session → re-stash via `withSession`
+  - `sendUserMessage` n'expanse pas les commandes → expansion skill/templates répliquée dans le bridge
+- Typecheck backend + build web OK
+- README.md (en) + README.fr.md + LICENSE MIT + CI GitHub Actions
 
 ### En cours
-- Phase 1 : scaffold + spike
+- (rien)
 
 ### Bloqué
 - (rien)
 
-### Questions
-- (aucune)
+### Reste
+- Créer le repo GitHub public et pousser (demander confirmation pour le push)
