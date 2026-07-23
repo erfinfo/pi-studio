@@ -48,3 +48,18 @@
 - README fr/en : installation sécurisée, options, captures dark/light, modèle, Ask, Artifacts
 - CI : validation Bash (bash -n + ShellCheck + aide) et PowerShell (aide via pwsh)
 - Validations : 19/19 tests, typecheck, build web, liens screenshots, scan secrets
+
+## 2026-07-24 — Retour visuel du bouton Arrêter
+
+### Diagnostic
+- Route WebSocket `abort` et API Pi `ctx.abort()` fonctionnelles
+- Reproduction réelle : outil `bash sleep 30` interrompu en 40 ms par client WebSocket
+- Test Chrome réel : clic sur Arrêter, retour à Envoyer en 61 ms
+- Cause du « n'a pas l'air de fonctionner » : aucun accusé visuel entre le clic et `agent_end`
+
+### Correctif
+- État client `isAborting` immédiat
+- Libellé `Arrêt…` et bouton désactivé pour empêcher le double clic
+- Réinitialisation sur fin d'agent, erreur, snapshot ou déconnexion
+- 3 tests de régression pour la demande, la fin d'agent et le cas inactif
+- Test Chrome du correctif : `Arrêt…` désactivé visible immédiatement, arrêt complet en 86 ms

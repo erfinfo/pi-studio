@@ -92,6 +92,7 @@ export interface StudioState {
   thinkingLevel: string;
   model: { provider?: string; id?: string; name?: string } | null;
   isStreaming: boolean;
+  isAborting: boolean;
   streamText: string;
   streamThinking: string;
   items: ChatItem[];
@@ -110,6 +111,7 @@ const initialState: StudioState = {
   thinkingLevel: "off",
   model: null,
   isStreaming: false,
+  isAborting: false,
   streamText: "",
   streamThinking: "",
   items: [],
@@ -122,7 +124,7 @@ const initialState: StudioState = {
 
 type Listener = () => void;
 
-class StudioStore {
+export class StudioStore {
   state: StudioState = { ...initialState };
   private listeners = new Set<Listener>();
   private ws: WebSocket | null = null;
@@ -154,7 +156,7 @@ class StudioStore {
 
     ws.onopen = () => this.patch({ connected: true, error: null });
     ws.onclose = () => {
-      this.patch({ connected: false });
+      this.patch({ connected: false, isAborting: false });
       setTimeout(() => this.connect(), 2000);
     };
     ws.onerror = () => {};
@@ -200,6 +202,12 @@ class StudioStore {
     this.send({ type: "prompt", text, deliverAs: "followUp" });
   }
 
+  abort(): void {
+    if (!this.state.isStreaming || this.state.isAborting) return;
+    this.patch({ isAborting: true });
+    this.send({ type: "abort" });
+  }
+
   private pushItem(item: ChatItem): void {
     this.patch({ items: [...this.state.items, item] });
   }
@@ -229,6 +237,7 @@ class StudioStore {
           thinkingLevel: msg.thinkingLevel ? String(msg.thinkingLevel) : this.state.thinkingLevel,
           model: (msg.model as StudioState["model"]) ?? this.state.model,
           isStreaming: Boolean(msg.isStreaming),
+          isAborting: Boolean(msg.isStreaming) ? this.state.isAborting : false,
         });
         break;
       case "sessions":
@@ -252,7 +261,7 @@ class StudioStore {
         break;
       }
       case "error":
-        this.patch({ error: String(msg.error ?? "erreur inconnue") });
+        this.patch({ error: String(msg.error ?? "erreur inconnue"), isAborting: false });
         break;
       default:
         break;
@@ -322,6 +331,7 @@ class StudioStore {
       thinkingLevel: String(msg.thinkingLevel ?? "off"),
       model: (msg.model as StudioState["model"]) ?? null,
       isStreaming: Boolean(msg.isStreaming),
+      isAborting: false,
       streamText: streaming?.text ?? "",
       streamThinking: streaming?.thinking ?? "",
       items,
@@ -333,11 +343,11 @@ class StudioStore {
   private applyPiEvent(event: string, data: Record<string, unknown>): void {
     switch (event) {
       case "agent_start":
-        this.patch({ isStreaming: true, streamText: "", streamThinking: "" });
+        this.patch({ isStreaming: true, isAborting: false, streamText: "", streamThinking: "" });
         break;
       case "agent_end":
       case "agent_settled":
-        this.patch({ isStreaming: false });
+        this.patch({ isStreaming: false, isAborting: false });
         break;
       case "message_start": {
         // Nouveau message assistant : vider les buffers de stream

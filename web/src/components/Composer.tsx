@@ -111,8 +111,8 @@ export default function Composer({ state }: { state: StudioState }) {
               <button onClick={() => submit("followUp")} title="followUp">
                 {t("composer.followUp")}
               </button>
-              <button className="danger" onClick={() => store.send({ type: "abort" })}>
-                {t("composer.abort")}
+              <button className="danger" disabled={state.isAborting} onClick={() => store.abort()}>
+                {state.isAborting ? t("composer.aborting") : t("composer.abort")}
               </button>
             </>
           ) : (

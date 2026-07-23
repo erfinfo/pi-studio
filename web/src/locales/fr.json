@@ -15,6 +15,7 @@
   "composer.steer": "Steer",
   "composer.followUp": "Suivre",
   "composer.abort": "Arrêter",
+  "composer.aborting": "Arrêt…",
   "composer.slashCommands": "Commandes",
   "sessions.title": "Sessions",
   "sessions.empty": "Aucune session trouvée",
