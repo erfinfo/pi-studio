@@ -33,6 +33,11 @@
   "error.title": "Erreur",
   "error.dismiss": "OK",
   "cmd.extensionUnsupported": "Commande d'extension — à lancer dans le TUI (limitation v1)",
+  "ask.title": "Question de l'agent",
+  "ask.recommended": "Recommandé",
+  "ask.other": "Autre (précisez)…",
+  "ask.submit": "Répondre",
+  "ask.cancel": "Ignorer",
   "status.connected": "Connecté",
   "status.disconnected": "Déconnecté — reconnexion…"
 }

@@ -99,6 +99,12 @@ async function launch(args: string, ctx: ExtensionCommandContext): Promise<void>
 export default function piStudio(pi: ExtensionAPI): void {
   hub.pi = pi;
 
+  // Bridge ask : pi-ask-tool publie ses questions sur le bus partagé,
+  // on les forward aux clients web (réponse via message WS ask_answer).
+  pi.events.on("pi-studio:ask-question", (data) => {
+    emitToWeb({ type: "ask_question", data });
+  });
+
   for (const eventName of FORWARDED_EVENTS) {
     // pi.on est typé par événement; la boucle homogénéise via un cast.
     (pi.on as (name: string, handler: (event: unknown) => Promise<void>) => void)(eventName, async (event: unknown) => {

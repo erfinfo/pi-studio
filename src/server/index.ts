@@ -172,6 +172,11 @@ async function routeMessage(msg: WsMessage): Promise<Record<string, unknown> | n
       return { type: "session_replaced", reason: "fork" };
     case "read_file":
       return { type: "file_content", path: String(msg.path ?? ""), ...actions.readArtifactFile(String(msg.path ?? "")) };
+    case "ask_answer": {
+      const piApi = hub.pi as { events?: { emit(channel: string, data: unknown): void } } | null;
+      piApi?.events?.emit("pi-studio:ask-answer", { askId: msg.askId, selections: msg.selections ?? [] });
+      return { type: "accepted", what: "ask_answer" };
+    }
     default:
       return { type: "error", error: `type inconnu: ${msg.type}` };
   }

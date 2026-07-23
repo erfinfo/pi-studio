@@ -10,6 +10,7 @@ Une interface web pour [Pi](https://pi.dev) (le harness d'agent minimal), distri
 - **Slash commands** — `/` ouvre l'autocomplete (`pi.getCommands()`) ; `/skill:*` et les templates de prompts sont expansés par le bridge ; les commandes d'extensions tierces doivent être lancées dans le TUI (limitation v1)
 - **Sélecteur de modèle** (tous les modèles authentifiés) et de **thinking level** (`off` → `max`)
 - **Sessions** : liste des sessions passées, reprise, nouvelle, fork depuis un message
+- **Outil ask dans le navigateur** — avec le fork pi-ask-tool web-aware, les questions structurées se répondent dans l'UI web
 - **Panneau Artifacts** : fichiers touchés par pi (write/edit/read), aperçu markdown, diffs des edits, aperçu d'images
 - **Thèmes dark / light** selon la palette [pi.dev](https://pi.dev), logo pi
 - **Interface i18n-ready** (locale française incluse)
@@ -33,7 +34,7 @@ Dans pi :
 /studio               # alias
 ```
 
-Gardez le terminal visible : les confirmations des autres extensions (dialogs de permissions, etc.) s'affichent toujours dans le TUI (limitation v1).
+**Questions interactives (outil ask)** : avec le fork web-aware de [pi-ask-tool](https://github.com/devkade/pi-ask-tool), les questions `ask` s'affichent directement dans l'interface web (la question est publiée sur le bus d'événements partagé de pi ; le TUI et le web répondent en compétition — le premier gagne). Les dialogs des autres extensions (permissions, etc.) restent dans le TUI.
 
 ## Modèle de sécurité
 

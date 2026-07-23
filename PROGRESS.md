@@ -26,3 +26,14 @@
 
 ### Reste
 - Créer le repo GitHub public et pousser (demander confirmation pour le push)
+
+## 2026-07-24 (suite)
+
+### Fait
+- Fixes UI : cookie assets (page blanche), menu modèle vers le bas + recherche, tri slash par préfixe, pi animé, compteur ctx rafraîchi (state_patch)
+- **Bridge ask web-aware (Option A)** : fork local de pi-ask-tool (`~/projets/pi-ask-tool`) qui publie les questions sur `pi.events` ; pi-studio les affiche dans le web et renvoie la réponse sur le bus. Race TUI/web, premier arrivé gagne. Test E2E validé (question → réponse web 'Bleu' → tool résolu sans toucher au TUI).
+- Bascule settings pi : `git:github.com/devkade/pi-ask-tool` → `/home/erick/projets/pi-ask-tool` (réversible avec `pi remove` + réinstall)
+
+### Notes
+- Si le web répond en premier, le dialog TUI reste affiché → Échap pour l'ignorer (limitation connue)
+- pi-ask-tool est upstream devkade — le fork local évite l'écrasement par `pi update`; envisager un fork GitHub public

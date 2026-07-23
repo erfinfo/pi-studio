@@ -1,5 +1,6 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import ArtifactsPane from "./components/ArtifactsPane";
+import AskDialog from "./components/AskDialog";
 import Chat from "./components/Chat";
 import Composer from "./components/Composer";
 import SessionsPanel from "./components/SessionsPanel";
@@ -51,6 +52,7 @@ export default function App() {
         )}
         <Composer state={state} />
       </div>
+      {state.ask && <AskDialog ask={state.ask} />}
     </div>
   );
 }

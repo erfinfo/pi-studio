@@ -10,6 +10,7 @@ A web interface for [Pi](https://pi.dev) (the minimal coding agent harness), dis
 
 - **Full chat** with streaming (`text_delta`, collapsible thinking blocks, tool call cards)
 - **Slash commands** — `/` opens autocomplete (`pi.getCommands()`); `/skill:*` and prompt templates are expanded by the bridge; extension commands from other packages must be run in the TUI (v1 limitation)
+- **Ask tool in the browser** — with the web-aware pi-ask-tool fork, structured questions are answered right in the web UI
 - **Model picker** (all authenticated models) and **thinking level** selector (`off` → `max`)
 - **Sessions**: list past sessions, resume, new, fork from any message
 - **Artifacts pane**: files touched by pi (write/edit/read), markdown preview, edit diffs, image preview
@@ -35,7 +36,7 @@ Inside pi:
 /studio               # alias
 ```
 
-Keep the terminal visible: confirmations from other extensions (e.g. permission dialogs) still appear in the TUI (v1 limitation).
+**Interactive questions (ask tool)**: with the web-aware fork of [pi-ask-tool](https://github.com/devkade/pi-ask-tool), `ask` questions appear directly in the web UI (the question is published on pi's shared event bus; TUI and web race to answer — first wins). Other extensions' dialogs (permission prompts, etc.) still appear in the TUI.
 
 ## Security model
 

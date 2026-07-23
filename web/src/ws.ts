@@ -58,6 +58,25 @@ export interface AssistantItem {
 
 export type ChatItem = UserItem | AssistantItem | ToolItem;
 
+export interface AskQuestion {
+  id: string;
+  question: string;
+  description?: string;
+  options: Array<{ label: string }>;
+  multi?: boolean;
+  recommended?: number;
+}
+
+export interface PendingAsk {
+  askId: string;
+  questions: AskQuestion[];
+}
+
+export interface AskSelection {
+  selectedOptions: string[];
+  customInput?: string;
+}
+
 export interface ContextUsage {
   tokens: number | null;
   contextWindow: number;
@@ -81,6 +100,7 @@ export interface StudioState {
   sessions: SessionInfo[];
   models: ModelInfo[];
   error: string | null;
+  ask: PendingAsk | null;
 }
 
 const initialState: StudioState = {
@@ -97,6 +117,7 @@ const initialState: StudioState = {
   sessions: [],
   models: [],
   error: null,
+  ask: null,
 };
 
 type Listener = () => void;
@@ -150,6 +171,15 @@ class StudioStore {
     if (this.ws?.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(msg));
     }
+  }
+
+  answerAsk(askId: string, selections: AskSelection[]): void {
+    this.send({ type: "ask_answer", askId, selections });
+    this.patch({ ask: null });
+  }
+
+  dismissAsk(): void {
+    this.patch({ ask: null });
   }
 
   sendPrompt(text: string): void {
@@ -214,6 +244,13 @@ class StudioStore {
         // géré par le panneau Artifacts via callback direct
         window.dispatchEvent(new CustomEvent("pi-studio:file", { detail: msg }));
         break;
+      case "ask_question": {
+        const data = msg.data as PendingAsk | undefined;
+        if (data?.askId && Array.isArray(data.questions)) {
+          this.patch({ ask: { askId: data.askId, questions: data.questions } });
+        }
+        break;
+      }
       case "error":
         this.patch({ error: String(msg.error ?? "erreur inconnue") });
         break;
