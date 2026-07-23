@@ -64,3 +64,21 @@
 - 3 tests de régression pour la demande, la fin d'agent et le cas inactif
 - Test Chrome du correctif : `Arrêt…` désactivé visible immédiatement, arrêt complet en 86 ms
 - Ajustement des mocks pour Node 20 après détection CI (`WebSocket` global absent) ; test ciblé Node 20 validé
+
+## 2026-07-24 — Modernisation visuelle responsive
+
+### Fait
+- Nouvelle hiérarchie visuelle inspirée de pi.dev : palette affinée, élévation, contrastes, typographie et espacements
+- Topbar restructurée : statut de connexion, modèle tronqué proprement, contrôles cohérents et menu modèle non coupé
+- Chat modernisé : bulles différenciées, cartes outils, code/tableaux, réflexion et animations discrètes
+- Composer flottant avec focus visible, actions compactes et adaptation mobile
+- Panneaux Sessions/Artifacts opaques et plein écran sur mobile ; modals avec backdrop blur
+- Accessibilité minimale : focus clavier, labels ARIA, `prefers-reduced-motion`
+- Responsive vérifié à 390 px sans débordement horizontal
+- 6 captures anonymisées régénérées avec la nouvelle interface
+
+### Validation réelle
+- Chrome desktop dark/light : chat, modèle, Artifact preview et Ask validés visuellement
+- Chrome mobile 390×844 : Sessions et composer validés, largeur document = viewport
+- E2E Arrêter : feedback `Arrêt…` immédiat, retour à Envoyer en 83 ms
+- Typecheck, 22 tests et build web réussis

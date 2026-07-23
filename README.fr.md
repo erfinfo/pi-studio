@@ -14,7 +14,7 @@ Une interface web pour [Pi](https://pi.dev) (le harness d'agent minimal), distri
 - **Sessions** : liste des sessions passées, reprise, nouvelle, fork depuis un message
 - **Outil ask dans le navigateur** — avec le fork pi-ask-tool web-aware, les questions structurées se répondent dans l'UI web
 - **Panneau Artifacts** : fichiers touchés par pi (write/edit/read), aperçu markdown, diffs des edits, aperçu d'images
-- **Thèmes dark / light** selon la palette [pi.dev](https://pi.dev), logo pi
+- **Interface responsive dark / light** selon la palette [pi.dev](https://pi.dev), soignée pour ordinateur et mobile
 - **Interface i18n-ready** (locale française incluse)
 - **Sécurité locale** : token aléatoire dans l'URL à chaque démarrage + vérification `Origin` du WebSocket
 

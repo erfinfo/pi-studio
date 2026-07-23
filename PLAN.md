@@ -13,10 +13,11 @@ Interface web pour Pi, distribuée comme package pi public (GitHub, MIT).
 - [x] Phase 7 : Thèmes dark/light (palette pi.dev), logo, i18n fr
 - [x] Phase 8 : Durcissement, README fr/en, CI, tests vitest, hygiene
 - [x] Post-v1 : installateurs Bash/PowerShell documentés + galerie de captures anonymisées
+- [x] Post-v1 : modernisation visuelle responsive dark/light + captures actualisées
 
 ## Reste à faire (v2+)
 
-- [ ] Repo GitHub public `erick-fortin/pi-studio` + push
+- [x] Repo GitHub public `erfinfo/pi-studio` + push
 - [ ] Fork avec navigateur d'arbre complet (`navigateTree`)
 - [ ] Bridge des dialogs `ctx.ui.*` (confirm/select/input) vers le web
 - [ ] Invocation des commandes d'extensions tierces depuis le web

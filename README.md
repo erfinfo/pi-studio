@@ -16,7 +16,7 @@ A web interface for [Pi](https://pi.dev) (the minimal coding agent harness), dis
 - **Model picker** (all authenticated models) and **thinking level** selector (`off` → `max`)
 - **Sessions**: list past sessions, resume, new, fork from any message
 - **Artifacts pane**: files touched by pi (write/edit/read), markdown preview, edit diffs, image preview
-- **Dark / light themes** using the [pi.dev](https://pi.dev) palette, pi logo
+- **Responsive dark / light interface** using the [pi.dev](https://pi.dev) palette, polished for desktop and mobile
 - **i18n-ready** UI (French locale included)
 - **Local-first security**: random per-start token in the URL + WebSocket `Origin` check
 
