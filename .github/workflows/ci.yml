@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install backend deps
+        run: npm ci --ignore-scripts || npm install --ignore-scripts
+
+      - name: Typecheck backend
+        run: npx tsc --noEmit
+
+      - name: Unit tests
+        run: npx vitest run
+
+      - name: Install web deps
+        working-directory: web
+        run: npm ci --ignore-scripts || npm install --ignore-scripts
+
+      - name: Build web
+        working-directory: web
+        run: npm run build
+
+      - name: Check committed dist is fresh
+        run: |
+          if ! git diff --quiet -- web/dist; then
+            echo "::error::web/dist n'est pas à jour — lancez 'cd web && npm run build' et commitez le résultat"
+            git status --short web/dist
+            exit 1
+          fi
