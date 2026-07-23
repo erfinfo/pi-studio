@@ -119,7 +119,12 @@ function snapshot(): Record<string, unknown> {
   };
 }
 
-function handleWsMessage(raw: string): Record<string, unknown> | null {
+interface CommandCtx {
+  isIdle(): boolean;
+  newSession(): Promise<{ cancelled: boolean }>;
+}
+
+async function handleWsMessage(raw: string): Promise<Record<string, unknown> | null> {
   let msg: { type?: string };
   try {
     msg = JSON.parse(raw);
@@ -129,6 +134,25 @@ function handleWsMessage(raw: string): Record<string, unknown> | null {
   switch (msg.type) {
     case "ping":
       return { type: "pong" };
+    case "new_session": {
+      const ctx = hub.ctx as CommandCtx | null;
+      if (!ctx) return { type: "error", error: "contexte de commande indisponible" };
+      if (!ctx.isIdle()) return { type: "error", error: "agent occupé" };
+      try {
+        // Timeout : certains hooks de session peuvent afficher une confirmation
+        // dans le TUI — dans ce cas l'opération reste en attente tant que
+        // l'utilisateur n'y répond pas.
+        await Promise.race([
+          ctx.newSession(),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("timeout — confirmation en attente dans le TUI ?")), 60_000),
+          ),
+        ]);
+        return { type: "session_replaced", reason: "new" };
+      } catch (err) {
+        return { type: "error", error: err instanceof Error ? err.message : String(err) };
+      }
+    }
     default:
       return { type: "error", error: `type inconnu: ${String(msg.type)}` };
   }
@@ -171,8 +195,9 @@ export async function ensureStudioServer(
   wss.on("connection", (ws: WebSocket) => {
     ws.send(JSON.stringify(snapshot()));
     ws.on("message", (data) => {
-      const reply = handleWsMessage(data.toString());
-      if (reply) ws.send(JSON.stringify(reply));
+      void handleWsMessage(data.toString()).then((reply) => {
+        if (reply && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(reply));
+      });
     });
   });
 
