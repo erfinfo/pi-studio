@@ -1,16 +1,16 @@
-# Tâche terminée — Modernisation visuelle
+# Tâche terminée — Cockpit IA v2 / Panneau Activité
 
-## Objectif
-Moderniser pi-studio dans un style sobre inspiré de pi.dev, sans modifier les workflows ni le protocole WebSocket.
+## Objectif atteint
+Le tracker est branché aux événements Pi, l’historique traverse le WebSocket, le panneau React est utilisable et le workflow réel a été validé de bout en bout.
 
-## Périmètre
-- Hiérarchie visuelle, palette, typographie, espacements
-- Topbar, chat, outils, composer, panneaux et dialogs
-- Dark/light, focus clavier, reduced-motion et responsive mobile
-
-## Preuves obtenues
-- Typecheck et 22 tests verts
-- Build `web/dist` frais
-- Validation Chrome dark/light, desktop/mobile
-- Smoke E2E : prompt, Arrêter (83 ms), modèle, Sessions, Artifacts et Ask
-- Aucun débordement horizontal à 390 px
+## Preuves
+- 53 tests après ajout du test d’isolation de session
+- Typecheck backend réussi
+- Build web production réussi et `web/dist` frais
+- Pi 0.81.1 réel : activité en direct, outil réussi, outil en erreur et interruption visible
+- Reconnexion navigateur et redémarrage Pi : historique restauré
+- Secret factice absent du journal; redaction présente
+- Effacement confirmé : interface vide et fichier à 0 octet
+- Chrome dark/light, desktop 1440 × 900 et mobile 390 × 844
+- Aucun débordement horizontal
+- Message fantôme après reconnexion corrigé et couvert par test

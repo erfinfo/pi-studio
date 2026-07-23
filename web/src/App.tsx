@@ -1,4 +1,5 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
+import ActivityPanel from "./components/ActivityPanel";
 import ArtifactsPane from "./components/ArtifactsPane";
 import AskDialog from "./components/AskDialog";
 import Chat from "./components/Chat";
@@ -15,6 +16,7 @@ export default function App() {
   const state = useStudio();
   const [showSessions, setShowSessions] = useState(false);
   const [showArtifacts, setShowArtifacts] = useState(false);
+  const [showActivity, setShowActivity] = useState(false);
 
   useEffect(() => {
     store.connect();
@@ -30,16 +32,24 @@ export default function App() {
             return !v;
           });
           setShowArtifacts(false);
+          setShowActivity(false);
         }}
         onToggleArtifacts={() => {
           setShowArtifacts((v) => !v);
           setShowSessions(false);
+          setShowActivity(false);
+        }}
+        onToggleActivity={() => {
+          setShowActivity((v) => !v);
+          setShowSessions(false);
+          setShowArtifacts(false);
         }}
       />
-      <div className={`app-body ${showArtifacts || showSessions ? "with-artifacts" : ""}`}>
+      <div className={`app-body ${showArtifacts || showSessions || showActivity ? "with-artifacts" : ""}`}>
         <Chat state={state} />
         {showSessions && <SessionsPanel state={state} onClose={() => setShowSessions(false)} />}
         {showArtifacts && <ArtifactsPane state={state} onClose={() => setShowArtifacts(false)} />}
+        {showActivity && <ActivityPanel state={state} onClose={() => setShowActivity(false)} />}
       </div>
       <div>
         {state.error && (

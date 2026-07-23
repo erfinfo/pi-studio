@@ -15,6 +15,14 @@ Interface web pour Pi, distribuée comme package pi public (GitHub, MIT).
 - [x] Post-v1 : installateurs Bash/PowerShell documentés + galerie de captures anonymisées
 - [x] Post-v1 : modernisation visuelle responsive dark/light + captures actualisées
 
+## Cockpit IA v2 — branche `feature/cockpit-ia-v2`
+
+- [x] Requirements : Activité persistante — spec approuvée par Erick
+- [x] Planning : plan détaillé approuvé par Erick
+- [x] Build 1 : domaine, redaction, journal persistant et tests
+- [x] Build 2 : bridge WebSocket et store React end-to-end
+- [x] Build 3 : panneau Activité, validation réelle et documentation
+
 ## Reste à faire (v2+)
 
 - [x] Repo GitHub public `erfinfo/pi-studio` + push

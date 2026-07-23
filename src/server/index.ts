@@ -150,6 +150,11 @@ async function routeMessage(msg: WsMessage): Promise<Record<string, unknown> | n
     case "abort":
       actions.abort();
       return { type: "accepted", what: "abort" };
+    case "clear_activity": {
+      const cleared = await actions.clearActivity();
+      emitToWeb(cleared);
+      return null;
+    }
     case "set_thinking":
       actions.setThinking(String(msg.level ?? "off"));
       return { type: "accepted", what: "set_thinking" };

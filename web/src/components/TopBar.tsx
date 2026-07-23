@@ -8,9 +8,10 @@ interface Props {
   state: StudioState;
   onToggleSessions: () => void;
   onToggleArtifacts: () => void;
+  onToggleActivity: () => void;
 }
 
-export default function TopBar({ state, onToggleSessions, onToggleArtifacts }: Props) {
+export default function TopBar({ state, onToggleSessions, onToggleArtifacts, onToggleActivity }: Props) {
   const [theme, setTheme] = useState(document.documentElement.dataset.theme === "light" ? "light" : "dark");
   const [modelPicker, setModelPicker] = useState(false);
   const [modelQuery, setModelQuery] = useState("");
@@ -110,6 +111,10 @@ export default function TopBar({ state, onToggleSessions, onToggleArtifacts }: P
               </option>
             ))}
           </select>
+          <button className="toolbar-button activity-button" onClick={onToggleActivity}>
+            <span className={`activity-live-dot ${state.activity.isRunning ? "is-running" : ""}`} aria-hidden="true" />
+            {t("topbar.activity")}
+          </button>
           <button className="toolbar-button" onClick={onToggleSessions}>{t("topbar.sessions")}</button>
           <button className="toolbar-button" onClick={onToggleArtifacts}>{t("topbar.artifacts")}</button>
           <button

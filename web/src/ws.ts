@@ -83,6 +83,45 @@ export interface ContextUsage {
   percent: number | null;
 }
 
+export type ActivityRunStatus = "running" | "completed" | "completed_with_errors" | "interrupted";
+export type ActivityStepStatus = "running" | "completed" | "failed" | "interrupted";
+
+export interface ActivityStep {
+  id: string;
+  kind: "agent" | "tool";
+  toolCallId?: string;
+  toolName?: string;
+  startedAt?: string;
+  endedAt?: string;
+  durationMs?: number;
+  status: ActivityStepStatus;
+  arguments?: unknown;
+  output?: unknown;
+  error?: unknown;
+  recovered?: boolean;
+}
+
+export interface ActivityRun {
+  id: string;
+  projectPath: string;
+  sessionFile?: string;
+  startedAt: string;
+  endedAt?: string;
+  durationMs?: number;
+  status: ActivityRunStatus;
+  toolCount: number;
+  errorCount: number;
+  interruptionReason?: string;
+  steps: ActivityStep[];
+}
+
+export interface ActivityState {
+  runs: ActivityRun[];
+  persistenceError?: string;
+  projectPath?: string;
+  isRunning: boolean;
+}
+
 export interface StudioState {
   connected: boolean;
   cwd: string;
@@ -97,6 +136,7 @@ export interface StudioState {
   streamThinking: string;
   items: ChatItem[];
   artifacts: Artifact[];
+  activity: ActivityState;
   contextUsage?: ContextUsage;
   sessions: SessionInfo[];
   models: ModelInfo[];
@@ -116,6 +156,7 @@ const initialState: StudioState = {
   streamThinking: "",
   items: [],
   artifacts: [],
+  activity: { runs: [], isRunning: false },
   sessions: [],
   models: [],
   error: null,
@@ -231,6 +272,10 @@ export class StudioStore {
       case "artifacts":
         this.patch({ artifacts: msg.artifacts as Artifact[] });
         break;
+      case "activity_update":
+      case "activity_cleared":
+        this.patch({ activity: (msg.activity as ActivityState) ?? this.state.activity });
+        break;
       case "state_patch":
         this.patch({
           contextUsage: (msg.contextUsage as ContextUsage | undefined) ?? this.state.contextUsage,
@@ -247,7 +292,13 @@ export class StudioStore {
         this.patch({ models: msg.models as ModelInfo[] });
         break;
       case "session_replaced":
-        this.patch({ items: [], streamText: "", streamThinking: "", artifacts: [] });
+        this.patch({
+          items: [],
+          streamText: "",
+          streamThinking: "",
+          artifacts: [],
+          activity: { runs: [], isRunning: false },
+        });
         break;
       case "file_content":
         // géré par le panneau Artifacts via callback direct
@@ -336,6 +387,7 @@ export class StudioStore {
       streamThinking: streaming?.thinking ?? "",
       items,
       artifacts: (msg.artifacts as Artifact[]) ?? [],
+      activity: (msg.activity as ActivityState) ?? { runs: [], isRunning: false },
       contextUsage: msg.contextUsage as ContextUsage | undefined,
     });
   }

@@ -11,6 +11,7 @@
 
 import { spawn } from "node:child_process";
 import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
+import { enableActivity } from "../src/activity/runtime.js";
 import { emitToWeb, hub, trackEvent } from "../src/bridge.js";
 import { ensureStudioServer } from "../src/server/index.js";
 
@@ -82,6 +83,7 @@ async function launch(args: string, ctx: ExtensionCommandContext): Promise<void>
   hub.cwd = ctx.cwd;
 
   try {
+    await enableActivity(ctx.cwd);
     const { handle, created } = await ensureStudioServer({ port: opts.port, lan: opts.lan });
     if (!created) {
       ctx.ui.notify(`pi-studio déjà actif : ${handle.url}`, "info");
@@ -108,7 +110,7 @@ export default function piStudio(pi: ExtensionAPI): void {
   for (const eventName of FORWARDED_EVENTS) {
     // pi.on est typé par événement; la boucle homogénéise via un cast.
     (pi.on as (name: string, handler: (event: unknown) => Promise<void>) => void)(eventName, async (event: unknown) => {
-      trackEvent(eventName, event);
+      await trackEvent(eventName, event);
       emitToWeb({ type: "pi_event", event: eventName, data: event });
     });
   }

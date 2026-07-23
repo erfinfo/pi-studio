@@ -6,6 +6,7 @@
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
+import { clearActivity as clearActivityRuntime, getActivityState, markActivityAbortRequested, switchActivityProject } from "../activity/runtime.js";
 import { hub } from "../bridge.js";
 
 // ---------------------------------------------------------------------------
@@ -109,6 +110,7 @@ export function getSnapshot(): Record<string, unknown> {
     streaming: hub.streaming,
     messages,
     artifacts: [...hub.artifacts.values()].sort((a, b) => b.timestamp.localeCompare(a.timestamp)),
+    activity: getActivityState(),
     contextUsage: safe(() => c?.getContextUsage(), undefined),
   };
 }
@@ -150,7 +152,13 @@ export function sendPrompt(text: string, deliverAs?: "steer" | "followUp"): void
 }
 
 export function abort(): void {
+  markActivityAbortRequested();
   ctx().abort();
+}
+
+export async function clearActivity(): Promise<Record<string, unknown>> {
+  await clearActivityRuntime();
+  return { type: "activity_cleared", activity: getActivityState() };
 }
 
 // ---------------------------------------------------------------------------
@@ -210,7 +218,10 @@ export async function listSessions(): Promise<SessionListItem[]> {
 async function restash(newCtx: unknown): Promise<void> {
   hub.ctx = newCtx;
   const cwd = (newCtx as { cwd?: string }).cwd;
-  if (cwd) hub.cwd = cwd;
+  if (cwd) {
+    hub.cwd = cwd;
+    await switchActivityProject(cwd);
+  }
 }
 
 export async function newSession(): Promise<void> {

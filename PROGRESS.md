@@ -1,5 +1,59 @@
 # PROGRESS.md — pi-studio
 
+## 2026-07-23 — Cockpit IA v2 / Activité persistante
+
+### Fait
+- Branche `feature/cockpit-ia-v2` créée depuis `main`; backup local créé
+- Base validée : 22 tests, typecheck backend et build web
+- Requirements approuvés dans `specs/jtbd-09-activite-persistante.md`
+- Plan détaillé rédigé dans `IMPLEMENTATION_PLAN.md`
+- Documentation officielle Pi 0.81.1 vérifiée : événements, `agent_settled`, `getAgentDir()` et package extension
+
+### En cours
+- Validation du plan par Erick
+
+### Limite connue
+- Critique Kimi K3 non obtenue : quota du cycle atteint (`403 access_terminated_error`)
+
+### Build 1 terminé
+- Domaine `ActivityRun` / `ActivityStep` et événements JSONL versionnés
+- Redaction récursive : clés sensibles, Bearer, PEM, variables et paramètres URL
+- Sérialisation sûre : cycles, profondeur, valeurs spéciales et payload limité à 64 Kio
+- Journal append-only, queue d’écriture, synchronisation disque à la clôture et réécriture atomique
+- Rétention 30 jours et plafond 100 Mo avec seuil injectable en tests
+- Permissions `0700` / `0600`
+- Tracker : outils parallèles, fins orphelines, interruptions et statuts honnêtes
+- 40 tests, typecheck et build production réussis
+- Smoke test disque réel validé avec secret de test redigé
+
+### Build 2 terminé
+- Runtime Activity activé uniquement après `/webui`
+- Événements Pi branchés au tracker et au journal
+- Snapshot et `activity_update` WebSocket intégrés
+- Effacement diffusé et refusé pendant une exécution active
+- Interruption web transmise au tracker
+- Changement de projet isolé via le `cwd` frais
+- Store React restaure et met à jour l’activité
+- Smoke réel serveur WebSocket : snapshot, 4 mises à jour, statut final `completed`
+
+### Build 3 terminé
+- Panneau Activité ouvrable et exclusif avec Sessions/Artifacts
+- Runs repliables, étapes chronologiques, détails arguments/sorties et statuts textuels
+- Avertissement de confidentialité et erreur de persistance visibles
+- Effacement confirmé et désactivé pendant une exécution
+- Dates fr-CA dans `America/Montreal`, focus clavier et reduced-motion
+- Responsive validé à 390 × 844 sans débordement horizontal
+- Dark/light validés à 1440 × 900
+- Pi réel : état En cours, durée, outil réussi, outil en erreur et fin stabilisée
+- Reconnexion et redémarrage : historique restauré
+- Secret factice redigé sur disque; effacement ramenant le journal à 0 octet
+- Défaut préexistant de message fantôme après reconnexion corrigé et testé
+- README fr/en et capture du panneau ajoutés
+
+### État
+- Module Activité terminé sur la branche `feature/cockpit-ia-v2`
+- `main` demeure intacte; aucun push ni merge effectué
+
 ## 2026-07-24
 
 ### Fait

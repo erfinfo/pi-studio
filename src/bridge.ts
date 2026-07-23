@@ -5,6 +5,8 @@
  * un singleton qui survit aux remplacements de session.
  */
 
+import { getActivityState, trackActivityEvent } from "./activity/runtime.js";
+
 export interface StreamingState {
   active: boolean;
   text: string;
@@ -77,7 +79,7 @@ function trackArtifact(tool: string, args: Record<string, unknown> | undefined, 
  * Met à jour l'état interne du hub à partir d'un événement pi forwardé.
  * Appelé par l'extension avant le broadcast.
  */
-export function trackEvent(eventName: string, data: unknown): void {
+export async function trackEvent(eventName: string, data: unknown): Promise<void> {
   const ev = data as Record<string, unknown> | undefined;
   switch (eventName) {
     case "agent_start":
@@ -97,6 +99,10 @@ export function trackEvent(eventName: string, data: unknown): void {
       }
       break;
     }
+    case "message_end":
+      hub.streaming.text = "";
+      hub.streaming.thinking = "";
+      break;
     case "tool_execution_start": {
       const id = ev?.toolCallId as string | undefined;
       const args = (ev?.args ?? ev?.input) as Record<string, unknown> | undefined;
@@ -113,4 +119,14 @@ export function trackEvent(eventName: string, data: unknown): void {
       break;
     }
   }
+
+  const sessionFile = (() => {
+    try {
+      return (hub.ctx as { sessionManager?: { getSessionFile(): string | undefined } } | null)?.sessionManager?.getSessionFile();
+    } catch {
+      return undefined;
+    }
+  })();
+  const activityChanged = await trackActivityEvent(eventName, data, sessionFile);
+  if (activityChanged) emitToWeb({ type: "activity_update", activity: getActivityState() });
 }

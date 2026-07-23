@@ -14,6 +14,7 @@ Une interface web pour [Pi](https://pi.dev) (le harness d'agent minimal), distri
 - **Sessions** : liste des sessions passées, reprise, nouvelle, fork depuis un message
 - **Outil ask dans le navigateur** — avec le fork pi-ask-tool web-aware, les questions structurées se répondent dans l'UI web
 - **Panneau Artifacts** : fichiers touchés par pi (write/edit/read), aperçu markdown, diffs des edits, aperçu d'images
+- **Panneau Activité** : exécutions, outils, durées, erreurs et historique persistant du projet, en direct
 - **Interface responsive dark / light** selon la palette [pi.dev](https://pi.dev), soignée pour ordinateur et mobile
 - **Interface i18n-ready** (locale française incluse)
 - **Sécurité locale** : token aléatoire dans l'URL à chaque démarrage + vérification `Origin` du WebSocket
@@ -81,6 +82,8 @@ Dans pi :
 
 **Questions interactives (outil ask)** : avec le fork web-aware [erfinfo/pi-ask-tool](https://github.com/erfinfo/pi-ask-tool), les questions `ask` s'affichent directement dans l'interface web (la question est publiée sur le bus d'événements partagé de pi ; le TUI et le web répondent en compétition — le premier gagne). Les dialogs des autres extensions (permissions, etc.) restent dans le TUI.
 
+**Historique Activité** : il est activé au lancement de `/webui`, conservé localement pendant 30 jours et limité à 100 Mo par projet. Les arguments et sorties sont redigés automatiquement avant l'écriture, mais un secret dans un format inconnu peut subsister. Le dossier est créé en `0700` et les journaux en `0600` sur les systèmes compatibles.
+
 ## Captures d'écran
 
 | Agent au travail (dark) | Recherche de modèle |
@@ -92,6 +95,8 @@ Dans pi :
 | ![Dialog Ask dans le navigateur](docs/screenshots/04-ask-dialog.png) | ![Aperçu Markdown rendu](docs/screenshots/05-artifacts-preview.png) |
 
 ![Thème light](docs/screenshots/06-light-theme.png)
+
+![Panneau Activité persistant](docs/screenshots/07-activity-panel-dark.png)
 
 Toutes les captures proviennent d'un projet de démonstration isolé et ne contiennent aucune donnée de session privée.
 

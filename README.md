@@ -16,6 +16,7 @@ A web interface for [Pi](https://pi.dev) (the minimal coding agent harness), dis
 - **Model picker** (all authenticated models) and **thinking level** selector (`off` → `max`)
 - **Sessions**: list past sessions, resume, new, fork from any message
 - **Artifacts pane**: files touched by pi (write/edit/read), markdown preview, edit diffs, image preview
+- **Activity pane**: live runs, tools, durations, errors, and persistent per-project history
 - **Responsive dark / light interface** using the [pi.dev](https://pi.dev) palette, polished for desktop and mobile
 - **i18n-ready** UI (French locale included)
 - **Local-first security**: random per-start token in the URL + WebSocket `Origin` check
@@ -83,6 +84,8 @@ Inside pi:
 
 **Interactive questions (ask tool)**: with the web-aware fork [erfinfo/pi-ask-tool](https://github.com/erfinfo/pi-ask-tool), `ask` questions appear directly in the web UI (the question is published on pi's shared event bus; TUI and web race to answer — first wins). Other extensions' dialogs (permission prompts, etc.) still appear in the TUI.
 
+**Activity history**: enabled when `/webui` starts, retained locally for 30 days, and capped at 100 MB per project. Tool arguments and outputs are automatically redacted before they are written, but a secret in an unknown format may remain. On compatible systems, the directory uses mode `0700` and journals use `0600`.
+
 ## Screenshots
 
 | Agent working (dark) | Model search |
@@ -94,6 +97,8 @@ Inside pi:
 | ![Ask dialog in the browser](docs/screenshots/04-ask-dialog.png) | ![Rendered Markdown artifact](docs/screenshots/05-artifacts-preview.png) |
 
 ![Light theme](docs/screenshots/06-light-theme.png)
+
+![Persistent Activity pane](docs/screenshots/07-activity-panel-dark.png)
 
 All screenshots come from an isolated demo project and contain no private session data.
 
