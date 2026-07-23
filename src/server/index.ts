@@ -17,6 +17,7 @@ import { extname, join, normalize, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { WebSocketServer, WebSocket } from "ws";
 import { emitToWeb, hub } from "../bridge.js";
+import * as actions from "./actions.js";
 
 export interface StudioServerOptions {
   port: number;
@@ -109,52 +110,89 @@ function handleHttp(req: IncomingMessage, res: ServerResponse, token: string): v
   res.end("not found");
 }
 
-function snapshot(): Record<string, unknown> {
-  const pi = hub.pi as { getCommands?: () => unknown[]; getThinkingLevel?: () => string } | null;
-  return {
-    type: "snapshot",
-    cwd: hub.cwd,
-    commands: pi?.getCommands?.() ?? [],
-    thinkingLevel: pi?.getThinkingLevel?.() ?? "off",
-  };
-}
+// ---------------------------------------------------------------------------
+// Routeur WS
+// ---------------------------------------------------------------------------
 
-interface CommandCtx {
-  isIdle(): boolean;
-  newSession(): Promise<{ cancelled: boolean }>;
-}
+type WsMessage = Record<string, unknown> & { type: string };
 
-async function handleWsMessage(raw: string): Promise<Record<string, unknown> | null> {
-  let msg: { type?: string };
-  try {
-    msg = JSON.parse(raw);
-  } catch {
-    return { type: "error", error: "json invalide" };
-  }
+async function routeMessage(msg: WsMessage): Promise<Record<string, unknown> | null> {
   switch (msg.type) {
     case "ping":
       return { type: "pong" };
-    case "new_session": {
-      const ctx = hub.ctx as CommandCtx | null;
-      if (!ctx) return { type: "error", error: "contexte de commande indisponible" };
-      if (!ctx.isIdle()) return { type: "error", error: "agent occupé" };
-      try {
-        // Timeout : certains hooks de session peuvent afficher une confirmation
-        // dans le TUI — dans ce cas l'opération reste en attente tant que
-        // l'utilisateur n'y répond pas.
-        await Promise.race([
-          ctx.newSession(),
-          new Promise((_, reject) =>
-            setTimeout(() => reject(new Error("timeout — confirmation en attente dans le TUI ?")), 60_000),
-          ),
-        ]);
-        return { type: "session_replaced", reason: "new" };
-      } catch (err) {
-        return { type: "error", error: err instanceof Error ? err.message : String(err) };
+    case "get_snapshot":
+      return actions.getSnapshot();
+    case "prompt": {
+      const text = String(msg.text ?? "");
+      if (!text.trim()) return { type: "error", error: "prompt vide" };
+      // Les commandes d'extensions tierces ne sont pas invoquables depuis le
+      // web (limitation v1) — on le signale plutôt que d'envoyer le texte brut.
+      const expanded = actions.expandCommand(text);
+      if (expanded.kind === "extension") {
+        return {
+          type: "error",
+          error: "commande d'extension — à lancer dans le TUI (limitation v1)",
+        };
+      }
+      actions.sendPrompt(
+        expanded.text,
+        msg.deliverAs === "steer" || msg.deliverAs === "followUp" ? msg.deliverAs : undefined,
+      );
+      return { type: "accepted", what: "prompt" };
+    }
+    case "abort":
+      actions.abort();
+      return { type: "accepted", what: "abort" };
+    case "set_thinking":
+      actions.setThinking(String(msg.level ?? "off"));
+      return { type: "accepted", what: "set_thinking" };
+    case "list_models":
+      return { type: "models", models: actions.listModels() };
+    case "set_model": {
+      const result = await actions.setModel(String(msg.provider ?? ""), String(msg.modelId ?? ""));
+      return result.ok ? { type: "accepted", what: "set_model" } : { type: "error", error: result.error };
+    }
+    case "list_sessions":
+      return { type: "sessions", sessions: await actions.listSessions() };
+    case "new_session":
+      await actions.newSession();
+      return { type: "session_replaced", reason: "new" };
+    case "resume_session":
+      await actions.resumeSession(String(msg.path ?? ""));
+      return { type: "session_replaced", reason: "resume" };
+    case "fork":
+      await actions.forkSession(String(msg.entryId ?? ""));
+      return { type: "session_replaced", reason: "fork" };
+    case "read_file":
+      return { type: "file_content", path: String(msg.path ?? ""), ...actions.readArtifactFile(String(msg.path ?? "")) };
+    default:
+      return { type: "error", error: `type inconnu: ${msg.type}` };
+  }
+}
+
+async function dispatch(ws: WebSocket, raw: string): Promise<void> {
+  let msg: WsMessage;
+  try {
+    msg = JSON.parse(raw) as WsMessage;
+  } catch {
+    ws.send(JSON.stringify({ type: "error", error: "json invalide" }));
+    return;
+  }
+  try {
+    const reply = await routeMessage(msg);
+    if (reply && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify(reply));
+      // Après un remplacement de session, pousser un snapshot frais.
+      if (reply.type === "session_replaced") {
+        setTimeout(() => {
+          if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(actions.getSnapshot()));
+        }, 500);
       }
     }
-    default:
-      return { type: "error", error: `type inconnu: ${String(msg.type)}` };
+  } catch (err) {
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: "error", error: err instanceof Error ? err.message : String(err) }));
+    }
   }
 }
 
@@ -193,19 +231,26 @@ export async function ensureStudioServer(
   });
 
   wss.on("connection", (ws: WebSocket) => {
-    ws.send(JSON.stringify(snapshot()));
-    ws.on("message", (data) => {
-      void handleWsMessage(data.toString()).then((reply) => {
-        if (reply && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(reply));
-      });
-    });
+    ws.send(JSON.stringify(actions.getSnapshot()));
+    ws.on("message", (data) => void dispatch(ws, data.toString()));
   });
 
   // Broadcast des événements pi vers tous les clients connectés.
   const listener = (event: unknown) => {
-    const payload = JSON.stringify(event);
+    const ev = event as { type?: string; event?: string };
+    const payloads = [JSON.stringify(event)];
+    if (ev.type === "pi_event" && ev.event === "tool_execution_end") {
+      payloads.push(
+        JSON.stringify({
+          type: "artifacts",
+          artifacts: [...hub.artifacts.values()].sort((a, b) => b.timestamp.localeCompare(a.timestamp)),
+        }),
+      );
+    }
     for (const client of wss.clients) {
-      if (client.readyState === WebSocket.OPEN) client.send(payload);
+      if (client.readyState === WebSocket.OPEN) {
+        for (const payload of payloads) client.send(payload);
+      }
     }
   };
   hub.listeners.add(listener);
