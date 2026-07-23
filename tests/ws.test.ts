@@ -5,7 +5,7 @@ describe("StudioStore.abort", () => {
   it("affiche immédiatement l'arrêt en cours et n'envoie pas deux demandes", () => {
     const studio = new StudioStore();
     studio.state = { ...studio.state, isStreaming: true };
-    const send = vi.spyOn(studio, "send");
+    const send = vi.spyOn(studio, "send").mockImplementation(() => {});
 
     studio.abort();
     studio.abort();
@@ -18,7 +18,7 @@ describe("StudioStore.abort", () => {
   it("retire l'état d'arrêt lorsque l'agent confirme sa fin", () => {
     const studio = new StudioStore();
     studio.state = { ...studio.state, isStreaming: true };
-    vi.spyOn(studio, "send");
+    vi.spyOn(studio, "send").mockImplementation(() => {});
 
     studio.abort();
     (studio as unknown as { handleMessage(msg: Record<string, unknown>): void }).handleMessage({

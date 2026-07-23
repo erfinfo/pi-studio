@@ -63,3 +63,4 @@
 - Réinitialisation sur fin d'agent, erreur, snapshot ou déconnexion
 - 3 tests de régression pour la demande, la fin d'agent et le cas inactif
 - Test Chrome du correctif : `Arrêt…` désactivé visible immédiatement, arrêt complet en 86 ms
+- Ajustement des mocks pour Node 20 après détection CI (`WebSocket` global absent) ; test ciblé Node 20 validé
