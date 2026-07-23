@@ -13,10 +13,19 @@ interface Props {
 export default function TopBar({ state, onToggleSessions, onToggleArtifacts }: Props) {
   const [theme, setTheme] = useState(document.documentElement.dataset.theme === "light" ? "light" : "dark");
   const [modelPicker, setModelPicker] = useState(false);
+  const [modelQuery, setModelQuery] = useState("");
 
   useEffect(() => {
-    if (modelPicker) store.send({ type: "list_models" });
+    if (modelPicker) {
+      store.send({ type: "list_models" });
+      setModelQuery("");
+    }
   }, [modelPicker]);
+
+  const q = modelQuery.toLowerCase();
+  const filteredModels = state.models
+    .filter((m) => !q || `${m.provider}/${m.id}`.toLowerCase().includes(q) || (m.name ?? "").toLowerCase().includes(q))
+    .slice(0, 30);
 
   const toggleTheme = () => {
     const next = theme === "dark" ? "light" : "dark";
@@ -47,9 +56,22 @@ export default function TopBar({ state, onToggleSessions, onToggleArtifacts }: P
           {modelLabel}
         </button>
         {modelPicker && (
-          <div className="slash-menu" style={{ bottom: "calc(100% + 6px)", left: "auto", right: 0, minWidth: 320 }}>
-            {state.models.length === 0 && <div className="empty-state">…</div>}
-            {state.models.map((m) => (
+          <div
+            className="slash-menu"
+            style={{ top: "calc(100% + 6px)", bottom: "auto", left: "auto", right: 0, minWidth: 360, maxHeight: 420 }}
+          >
+            <div style={{ padding: "0.4rem 0.6rem", borderBottom: "1px solid var(--line)", position: "sticky", top: 0, background: "var(--panel)" }}>
+              <input
+                type="text"
+                autoFocus
+                value={modelQuery}
+                onChange={(e) => setModelQuery(e.target.value)}
+                placeholder={t("model.search")}
+                style={{ width: "100%" }}
+              />
+            </div>
+            {filteredModels.length === 0 && <div className="empty-state">…</div>}
+            {filteredModels.map((m) => (
               <div
                 key={`${m.provider}/${m.id}`}
                 className="slash-item"

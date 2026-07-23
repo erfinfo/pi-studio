@@ -16,7 +16,14 @@ export default function Composer({ state }: { state: StudioState }) {
   const matches: CommandInfo[] = useMemo(() => {
     if (slashQuery === null) return [];
     const q = slashQuery.toLowerCase();
-    return state.commands.filter((c) => c.name.toLowerCase().includes(q)).slice(0, 12);
+    const all = state.commands.filter((c) => c.name.toLowerCase().includes(q));
+    // Préfixes d'abord (ex. "skill:..." pour "/sk"), puis le reste.
+    all.sort((a, b) => {
+      const ap = a.name.toLowerCase().startsWith(q) ? 0 : 1;
+      const bp = b.name.toLowerCase().startsWith(q) ? 0 : 1;
+      return ap - bp || a.name.localeCompare(b.name);
+    });
+    return all.slice(0, 20);
   }, [slashQuery, state.commands]);
 
   const showSlash = slashQuery !== null && matches.length > 0 && !text.includes(" ");
@@ -83,6 +90,7 @@ export default function Composer({ state }: { state: StudioState }) {
         </div>
       )}
       <div className="composer-inner">
+        {state.isStreaming && <img className="pi-spinner" src="./logo.svg" alt="pi" />}
         <textarea
           ref={textareaRef}
           value={text}

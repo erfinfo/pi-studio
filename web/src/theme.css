@@ -262,6 +262,26 @@ input[type="text"] {
   }
 }
 
+/* Petit pi animé pendant que l'agent travaille */
+.pi-spinner {
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  align-self: center;
+  animation: pi-spin 1.6s ease-in-out infinite;
+}
+@keyframes pi-spin {
+  0% {
+    transform: rotateY(0deg);
+  }
+  50% {
+    transform: rotateY(180deg);
+  }
+  100% {
+    transform: rotateY(360deg);
+  }
+}
+
 /* Composer */
 .composer {
   border-top: 1px solid var(--line);

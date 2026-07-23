@@ -254,6 +254,15 @@ export async function ensureStudioServer(
         }),
       );
     }
+    // Rafraîchir l'état (ctx usage, modèle, thinking) après les jalons.
+    if (
+      ev.type === "pi_event" &&
+      ["agent_end", "agent_settled", "model_select", "thinking_level_select", "session_info_changed"].includes(
+        ev.event ?? "",
+      )
+    ) {
+      payloads.push(JSON.stringify(actions.getStatePatch()));
+    }
     for (const client of wss.clients) {
       if (client.readyState === WebSocket.OPEN) {
         for (const payload of payloads) client.send(payload);

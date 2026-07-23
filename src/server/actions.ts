@@ -113,6 +113,24 @@ export function getSnapshot(): Record<string, unknown> {
   };
 }
 
+/** Patch d'état léger poussé après les événements (fin de tour, changement de modèle…). */
+export function getStatePatch(): Record<string, unknown> {
+  const c = hub.ctx as CommandCtx | null;
+  let model: unknown = null;
+  try {
+    model = (hub.ctx as { model?: unknown } | null)?.model ?? null;
+  } catch {
+    // ignore
+  }
+  return {
+    type: "state_patch",
+    contextUsage: safe(() => c?.getContextUsage(), undefined),
+    thinkingLevel: safe(() => pi().getThinkingLevel(), "off"),
+    model,
+    isStreaming: hub.streaming.active,
+  };
+}
+
 function safe<T>(fn: () => T, fallback: T): T {
   try {
     return fn();

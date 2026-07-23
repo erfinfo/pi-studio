@@ -193,6 +193,14 @@ class StudioStore {
       case "artifacts":
         this.patch({ artifacts: msg.artifacts as Artifact[] });
         break;
+      case "state_patch":
+        this.patch({
+          contextUsage: (msg.contextUsage as ContextUsage | undefined) ?? this.state.contextUsage,
+          thinkingLevel: msg.thinkingLevel ? String(msg.thinkingLevel) : this.state.thinkingLevel,
+          model: (msg.model as StudioState["model"]) ?? this.state.model,
+          isStreaming: Boolean(msg.isStreaming),
+        });
+        break;
       case "sessions":
         this.patch({ sessions: msg.sessions as SessionInfo[] });
         break;
