@@ -27,6 +27,15 @@ export interface HubState {
   pi: unknown | null;
   /** Contexte de commande stashé (méthodes de contrôle de session). */
   ctx: unknown | null;
+  /** Contexte vivant de la session active, renouvelé par les événements Pi. */
+  liveCtx: unknown | null;
+  /** ExtensionAPI vivant de la session active, renouvelé à chaque factory. */
+  livePi: unknown | null;
+  /** Valeurs stables extraites du contexte Pi avant son invalidation. */
+  modelRegistry: unknown | null;
+  model: unknown | null;
+  scopedModels: ReadonlyArray<{ model: unknown }>;
+  pendingModelChanges: Map<string, (result: { ok: boolean; error?: string }) => void>;
   /** Répertoire de travail de la session au démarrage du serveur. */
   cwd: string;
   /** Listeners d'événements pi (alimentés par l'extension). */
@@ -42,6 +51,12 @@ export interface HubState {
 export const hub: HubState = {
   pi: null,
   ctx: null,
+  liveCtx: null,
+  livePi: null,
+  modelRegistry: null,
+  model: null,
+  scopedModels: [],
+  pendingModelChanges: new Map(),
   cwd: process.cwd(),
   listeners: new Set(),
   streaming: { active: false, text: "", thinking: "" },

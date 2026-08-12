@@ -2,11 +2,21 @@ import { afterEach, describe, expect, it } from "vitest";
 import { hub, trackEvent } from "../src/bridge.js";
 
 const originalCtx = hub.ctx;
+const originalLiveCtx = hub.liveCtx;
+const originalLivePi = hub.livePi;
+const originalModel = hub.model;
+const originalModelRegistry = hub.modelRegistry;
+const originalScopedModels = hub.scopedModels;
 
 afterEach(() => {
   hub.streaming = { active: false, text: "", thinking: "" };
   hub.pendingToolArgs.clear();
   hub.ctx = originalCtx;
+  hub.liveCtx = originalLiveCtx;
+  hub.livePi = originalLivePi;
+  hub.model = originalModel;
+  hub.modelRegistry = originalModelRegistry;
+  hub.scopedModels = originalScopedModels;
 });
 
 describe("bridge streaming snapshot", () => {

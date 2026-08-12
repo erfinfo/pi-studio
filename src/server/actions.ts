@@ -17,13 +17,15 @@ import { hub } from "../bridge.js";
 interface PiApi {
   sendUserMessage(text: string, options?: { deliverAs?: "steer" | "followUp" }): void;
   setModel(model: unknown): Promise<boolean>;
+  events?: { emit(channel: string, data: unknown): void };
   getThinkingLevel(): string;
   setThinkingLevel(level: string): void;
   getCommands(): Array<{ name: string; description?: string; source: string }>;
 }
 
 interface ModelRegistry {
-  getAvailable(): Array<{ provider: string; id: string; name?: string }>;
+  getAll(): Array<{ provider: string; id: string; name?: string }>;
+  hasConfiguredAuth(model: unknown): boolean;
   find(provider: string, modelId: string): unknown | undefined;
 }
 
@@ -38,6 +40,7 @@ interface CommandCtx {
   abort(): void;
   cwd: string;
   modelRegistry: ModelRegistry;
+  scopedModels?: ReadonlyArray<{ model: { provider: string; id: string; name?: string } }>;
   sessionManager: SessionManagerLike;
   getContextUsage(): { tokens: number | null; contextWindow: number; percent: number | null } | undefined;
   newSession(options?: { withSession?: (ctx: unknown) => Promise<void> }): Promise<{ cancelled: boolean }>;
@@ -48,13 +51,20 @@ interface CommandCtx {
 const SESSION_OP_TIMEOUT_MS = 60_000;
 
 function pi(): PiApi {
-  if (!hub.pi) throw new Error("extension pi non initialisée");
-  return hub.pi as PiApi;
+  const value = hub.livePi ?? hub.pi;
+  if (!value) throw new Error("extension pi non initialisée");
+  return value as PiApi;
 }
 
 function ctx(): CommandCtx {
   if (!hub.ctx) throw new Error("contexte de commande indisponible — lancez /webui dans le TUI");
   return hub.ctx as CommandCtx;
+}
+
+function modelRegistry(): ModelRegistry {
+  const value = hub.modelRegistry ?? (hub.liveCtx as { modelRegistry?: unknown } | null)?.modelRegistry;
+  if (!value) throw new Error("registre des modèles Pi indisponible");
+  return value as ModelRegistry;
 }
 
 function withTimeout<T>(p: Promise<T>): Promise<T> {
@@ -71,7 +81,7 @@ function withTimeout<T>(p: Promise<T>): Promise<T> {
 // ---------------------------------------------------------------------------
 
 export function getSnapshot(): Record<string, unknown> {
-  const c = hub.ctx as CommandCtx | null;
+  const c = (hub.liveCtx ?? hub.ctx) as CommandCtx | null;
   let messages: unknown[] = [];
   let sessionFile: string | undefined;
   let sessionName: string | undefined;
@@ -91,12 +101,13 @@ export function getSnapshot(): Record<string, unknown> {
       // ignore
     }
   }
-  let model: unknown = null;
-  try {
-    const m = (hub.ctx as CommandCtx | null) && (hub.ctx as { model?: unknown }).model;
-    model = m ?? null;
-  } catch {
-    // ignore
+  let model: unknown = hub.model;
+  if (!model) {
+    try {
+      model = (c as { model?: unknown } | null)?.model ?? null;
+    } catch {
+      // ignore
+    }
   }
   return {
     type: "snapshot",
@@ -117,12 +128,14 @@ export function getSnapshot(): Record<string, unknown> {
 
 /** Patch d'état léger poussé après les événements (fin de tour, changement de modèle…). */
 export function getStatePatch(): Record<string, unknown> {
-  const c = hub.ctx as CommandCtx | null;
-  let model: unknown = null;
-  try {
-    model = (hub.ctx as { model?: unknown } | null)?.model ?? null;
-  } catch {
-    // ignore
+  const c = (hub.liveCtx ?? hub.ctx) as CommandCtx | null;
+  let model: unknown = hub.model;
+  if (!model) {
+    try {
+      model = (c as { model?: unknown } | null)?.model ?? null;
+    } catch {
+      // ignore
+    }
   }
   return {
     type: "state_patch",
@@ -146,7 +159,7 @@ function safe<T>(fn: () => T, fallback: T): T {
 // ---------------------------------------------------------------------------
 
 export function sendPrompt(text: string, deliverAs?: "steer" | "followUp"): void {
-  const streaming = hub.streaming.active || !(hub.ctx as CommandCtx | null)?.isIdle?.();
+  const streaming = hub.streaming.active || !((hub.liveCtx ?? hub.ctx) as CommandCtx | null)?.isIdle?.();
   const mode = deliverAs ?? (streaming ? "followUp" : undefined);
   pi().sendUserMessage(text, mode ? { deliverAs: mode } : undefined);
 }
@@ -166,7 +179,18 @@ export async function clearActivity(): Promise<Record<string, unknown>> {
 // ---------------------------------------------------------------------------
 
 export function listModels(): Array<{ provider: string; id: string; name?: string }> {
-  return safe(() => ctx().modelRegistry.getAvailable(), []).map((m) => ({
+  const registry = modelRegistry();
+  const scoped = hub.scopedModels as ReadonlyArray<{
+    model: { provider: string; id: string; name?: string };
+  }>;
+  // Pi 0.84 remplit getAvailable() de façon asynchrone et son snapshot peut être
+  // vide dans un hôte sans interaction TUI. getAll() contient déjà le catalogue
+  // fusionné (built-ins, models.json, extensions); hasConfiguredAuth applique le
+  // même filtre de fournisseurs configurés sans refaire de requêtes réseau.
+  const models = scoped.length > 0
+    ? scoped.map((entry) => entry.model)
+    : registry.getAll().filter((model) => registry.hasConfiguredAuth(model));
+  return models.map((m) => ({
     provider: m.provider,
     id: m.id,
     name: m.name,
@@ -174,10 +198,20 @@ export function listModels(): Array<{ provider: string; id: string; name?: strin
 }
 
 export async function setModel(provider: string, modelId: string): Promise<{ ok: boolean; error?: string }> {
-  const model = ctx().modelRegistry.find(provider, modelId);
+  const model = modelRegistry().find(provider, modelId);
   if (!model) return { ok: false, error: `modèle introuvable: ${provider}/${modelId}` };
-  const ok = await pi().setModel(model);
-  return ok ? { ok: true } : { ok: false, error: "aucune clé API pour ce modèle" };
+  const requestId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  return new Promise((resolvePromise) => {
+    const timeout = setTimeout(() => {
+      hub.pendingModelChanges.delete(requestId);
+      resolvePromise({ ok: false, error: "délai dépassé lors du changement de modèle" });
+    }, 10_000);
+    hub.pendingModelChanges.set(requestId, (result) => {
+      clearTimeout(timeout);
+      resolvePromise(result);
+    });
+    pi().events?.emit("pi-studio:set-model", { requestId, provider, modelId });
+  });
 }
 
 export function setThinking(level: string): void {

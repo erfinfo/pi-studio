@@ -2,6 +2,8 @@ import { mkdtempSync, readFileSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
+import { hub } from "../src/bridge.js";
+import { listModels } from "../src/server/actions.js";
 import { _internals } from "../src/server/index.js";
 
 describe("originAllowed", () => {
@@ -26,6 +28,51 @@ describe("originAllowed", () => {
   it("accepte les clients sans Origin (curl), le token reste requis", () => {
     const req = { headers: {} } as never;
     expect(originAllowed(req, 4173, false)).toBe(true);
+  });
+});
+
+describe("listModels", () => {
+  const originalModelRegistry = hub.modelRegistry;
+  const originalScopedModels = hub.scopedModels;
+
+  afterEach(() => {
+    hub.modelRegistry = originalModelRegistry;
+    hub.scopedModels = originalScopedModels;
+  });
+
+  it("lit le catalogue Pi et conserve les fournisseurs configurés", () => {
+    hub.modelRegistry = {
+      getAll() {
+        return [
+          { provider: "openai-codex", id: "gpt-test", name: "GPT Test" },
+          { provider: "sans-auth", id: "ignored" },
+        ];
+      },
+      hasConfiguredAuth(model: { provider: string }) {
+        return model.provider === "openai-codex";
+      },
+    };
+    hub.scopedModels = [];
+
+    expect(listModels()).toEqual([
+      { provider: "openai-codex", id: "gpt-test", name: "GPT Test" },
+    ]);
+  });
+
+  it("respecte les modèles limités par la configuration Pi", () => {
+    hub.modelRegistry = {
+      getAll() {
+        return [{ provider: "all", id: "ignored" }];
+      },
+      hasConfiguredAuth() {
+        return true;
+      },
+    };
+    hub.scopedModels = [{ model: { provider: "openrouter-curated", id: "moonshotai/kimi-k2.6" } }];
+
+    expect(listModels()).toEqual([
+      { provider: "openrouter-curated", id: "moonshotai/kimi-k2.6", name: undefined },
+    ]);
   });
 });
 

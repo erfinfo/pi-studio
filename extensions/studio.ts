@@ -100,6 +100,7 @@ async function launch(args: string, ctx: ExtensionCommandContext): Promise<void>
 
 export default function piStudio(pi: ExtensionAPI): void {
   hub.pi = pi;
+  hub.livePi = pi;
 
   // Bridge ask : pi-ask-tool publie ses questions sur le bus partagé,
   // on les forward aux clients web (réponse via message WS ask_answer).
@@ -107,13 +108,62 @@ export default function piStudio(pi: ExtensionAPI): void {
     emitToWeb({ type: "ask_question", data });
   });
 
+  // Le bus est réabonné à chaque runtime Pi, contrairement aux références de
+  // contexte qui deviennent volontairement périmées après un reload/switch.
+  pi.events.on("pi-studio:set-model", async (data) => {
+    const request = data as { requestId?: string; provider?: string; modelId?: string };
+    if (!request.requestId) return;
+    const done = hub.pendingModelChanges.get(request.requestId);
+    if (!done) return;
+    hub.pendingModelChanges.delete(request.requestId);
+    try {
+      const model = hub.modelRegistry as {
+        find(provider: string, modelId: string): unknown | undefined;
+      } | null;
+      const selected = model?.find(request.provider ?? "", request.modelId ?? "");
+      if (!selected) {
+        done({ ok: false, error: `modèle introuvable: ${request.provider}/${request.modelId}` });
+        return;
+      }
+      const ok = await pi.setModel(selected as never);
+      done(ok ? { ok: true } : { ok: false, error: "aucune clé API pour ce modèle" });
+    } catch (err) {
+      done({ ok: false, error: err instanceof Error ? err.message : String(err) });
+    }
+  });
+
   for (const eventName of FORWARDED_EVENTS) {
     // pi.on est typé par événement; la boucle homogénéise via un cast.
-    (pi.on as (name: string, handler: (event: unknown) => Promise<void>) => void)(eventName, async (event: unknown) => {
-      await trackEvent(eventName, event);
-      emitToWeb({ type: "pi_event", event: eventName, data: event });
-    });
+    (pi.on as (name: string, handler: (event: unknown, ctx: unknown) => Promise<void>) => void)(
+      eventName,
+      async (event: unknown, ctx: unknown) => {
+        hub.liveCtx = ctx;
+        const stableCtx = ctx as {
+          model?: unknown;
+          modelRegistry?: unknown;
+          scopedModels?: ReadonlyArray<{ model: unknown }>;
+        };
+        hub.model = stableCtx.model ?? hub.model;
+        hub.modelRegistry = stableCtx.modelRegistry ?? hub.modelRegistry;
+        hub.scopedModels = stableCtx.scopedModels ?? hub.scopedModels;
+        if (eventName === "model_select") {
+          hub.model = (event as { model?: unknown }).model ?? hub.model;
+        }
+        hub.livePi = pi;
+        await trackEvent(eventName, event);
+        emitToWeb({ type: "pi_event", event: eventName, data: event });
+      },
+    );
   }
+
+  pi.on("session_start", async (_event, ctx) => {
+    hub.liveCtx = ctx;
+    hub.livePi = pi;
+    hub.modelRegistry = ctx.modelRegistry;
+    hub.model = ctx.model ?? null;
+    hub.scopedModels = (ctx as typeof ctx & { scopedModels?: ReadonlyArray<{ model: unknown }> }).scopedModels ?? [];
+    hub.cwd = ctx.cwd;
+  });
 
   pi.registerCommand("webui", {
     description: "Ouvre pi-studio (interface web) — options: --port N, --lan, --no-open",
