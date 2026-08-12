@@ -12,7 +12,7 @@
 
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { randomBytes } from "node:crypto";
-import { existsSync, readFileSync, statSync } from "node:fs";
+import { chmodSync, existsSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { extname, join, normalize, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { WebSocketServer, WebSocket } from "ws";
@@ -54,6 +54,16 @@ let current: { handle: StudioServerHandle; server: Server; wss: WebSocketServer 
 
 function generateToken(): string {
   return randomBytes(24).toString("base64url");
+}
+
+function writePrivateUrlFile(path: string, url: string): void {
+  if (!path || path.includes("\0")) return;
+  try {
+    writeFileSync(path, `${url}\n`, { encoding: "utf8", mode: 0o600 });
+    chmodSync(path, 0o600);
+  } catch {
+    // Le serveur reste utilisable dans le TUI si le lanceur local est indisponible.
+  }
 }
 
 function tokenFrom(req: IncomingMessage): string {
@@ -302,6 +312,8 @@ export async function ensureStudioServer(
     },
   };
   current = { handle, server, wss };
+  const urlFile = process.env.PI_STUDIO_URL_FILE;
+  if (!opts.lan && urlFile) writePrivateUrlFile(urlFile, handle.url);
   return { handle, created: true };
 }
 
@@ -311,4 +323,4 @@ export function _resetForTests(): void {
   current = null;
 }
 
-export const _internals = { DIST_DIR, originAllowed, serveStatic };
+export const _internals = { DIST_DIR, originAllowed, serveStatic, writePrivateUrlFile };

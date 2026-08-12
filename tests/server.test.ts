@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -26,6 +26,21 @@ describe("originAllowed", () => {
   it("accepte les clients sans Origin (curl), le token reste requis", () => {
     const req = { headers: {} } as never;
     expect(originAllowed(req, 4173, false)).toBe(true);
+  });
+});
+
+describe("fichier URL privé", () => {
+  const { writePrivateUrlFile } = _internals;
+  const tmp = mkdtempSync(join(tmpdir(), "pi-studio-url-test-"));
+
+  afterEach(() => rmSync(tmp, { recursive: true, force: true }));
+
+  it("écrit l’URL du lanceur avec des permissions 0600", () => {
+    const path = join(tmp, "url");
+    const url = "http://127.0.0.1:14191/?token=test-prive";
+    writePrivateUrlFile(path, url);
+    expect(readFileSync(path, "utf8")).toBe(`${url}\n`);
+    expect(statSync(path).mode & 0o777).toBe(0o600);
   });
 });
 

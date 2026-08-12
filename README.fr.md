@@ -128,6 +128,21 @@ pi -e ./pi-studio
 - `npm test` — tests unitaires vitest
 - `web/dist` est **commité** (pi installe les packages avec `npm install --omit=dev`) ; la CI vérifie qu'il est à jour
 
+### Lanceur local persistant (Linux)
+
+Pour un raccourci bureau qui redémarre Pi Studio au besoin, le lanceur peut définir
+`PI_STUDIO_URL_FILE` avant d’exécuter Pi. En mode local seulement, le serveur écrit
+alors son URL complète dans ce fichier avec des permissions `0600`. Le lanceur peut
+ainsi ouvrir l’URL sécurisée sans journaliser ni afficher son jeton.
+
+```bash
+PI_STUDIO_URL_FILE="$XDG_RUNTIME_DIR/pi-studio-url" \
+  pi '/webui --port 14191 --no-open'
+```
+
+Ne jamais utiliser ce mécanisme avec `--lan` ni placer le fichier hors d’un dossier
+privé appartenant à l’utilisateur.
+
 ## Fonctionnement
 
 Le package enregistre une commande `/webui`. Celle-ci démarre un serveur HTTP + WebSocket **dans le processus pi** et relie l'interface web à l'API d'extensions de pi : les événements de session (`message_update`, `tool_execution_*`, …) sont streamés au navigateur ; le navigateur envoie des actions (`sendUserMessage`, `setModel`, `setThinkingLevel`, contrôle de session via le contexte de commande). Le serveur est un singleton qui survit aux remplacements de session (`/new`, `/resume`, `/fork`) ; le contexte de commande est rafraîchi via `withSession` après chaque remplacement.

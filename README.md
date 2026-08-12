@@ -130,6 +130,21 @@ pi -e ./pi-studio
 - `npm test` — vitest unit tests
 - `web/dist` is **committed** (pi installs packages with `npm install --omit=dev`); CI checks it is fresh
 
+### Lanceur local persistant (Linux)
+
+Pour un raccourci bureau qui redémarre Pi Studio au besoin, le lanceur peut définir
+`PI_STUDIO_URL_FILE` avant d’exécuter Pi. En mode local seulement, le serveur écrit
+alors son URL complète dans ce fichier avec des permissions `0600`. Cela permet au
+lanceur d’ouvrir l’URL sécurisée sans journaliser ni afficher son jeton.
+
+```bash
+PI_STUDIO_URL_FILE="$XDG_RUNTIME_DIR/pi-studio-url" \
+  pi '/webui --port 14191 --no-open'
+```
+
+Ne jamais utiliser ce mécanisme avec `--lan` ni placer le fichier hors d’un dossier
+privé appartenant à l’utilisateur.
+
 ### Manual smoke checklist
 
 1. `pi -e .` then `/webui` → browser opens, chat loads
